@@ -1,123 +1,1097 @@
-<!DOCTYPE html>
-<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestion des étudiants</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, button { margin: 5px; padding: 5px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-  </style>
-</head>
-<body>
-
-  <h1>Gestion des étudiants</h1>
-
-  <div>
-    <input type="hidden" id="id">
-    <input type="text" id="nom" placeholder="Nom">
-    <input type="text" id="prenom" placeholder="Prénom">
-    <input type="email" id="email" placeholder="Email">
-    <input type="number" id="age" placeholder="Âge">
-    <button onclick="ajouterOuModifier()">Ajouter / Modifier</button>
-  </div>
-
-  <table id="table-etudiants">
-    <thead>
-      <tr>
-        <th>ID</th><th>Nom</th><th>Prénom</th><th>Email</th><th>Âge</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script>
-    const apiBase = "http://localhost:8888/tp-flightphp-crud/ws";
-
-    function ajax(method, url, data, callback) {
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, apiBase + url, true);
-      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          callback(JSON.parse(xhr.responseText));
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Prêts Bancaires - Interface Professionnelle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+      :root {
+        /* Palette professionnelle */
+        --primary-color: #1a365d;
+        --primary-light: #2d4a6b;
+        --primary-dark: #0f2537;
+        --secondary-color: #2b6cb0;
+        --accent-color: #3182ce;
+        --accent-light: #4299e1;
+        --success-color: #38a169;
+        --warning-color: #d69e2e;
+        --danger-color: #e53e3e;
+        --info-color: #00b4d8;
+        
+        /* Couleurs neutres */
+        --gray-50: #f9fafb;
+        --gray-100: #f7fafc;
+        --gray-200: #edf2f7;
+        --gray-300: #e2e8f0;
+        --gray-400: #cbd5e0;
+        --gray-500: #a0aec0;
+        --gray-600: #718096;
+        --gray-700: #4a5568;
+        --gray-800: #2d3748;
+        --gray-900: #1a202c;
+        
+        /* Backgrounds */
+        --bg-primary: #f8fafc;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #f1f5f9;
+        --bg-dark: #0f172a;
+        
+        /* Dimensions */
+        --sidebar-width: 280px;
+        --header-height: 70px;
+        --border-radius: 12px;
+        --border-radius-sm: 8px;
+        --border-radius-lg: 16px;
+        
+        /* Shadows */
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        
+        /* Transitions */
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+  
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+  
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: var(--gray-800);
+        background: linear-gradient(135deg, var(--bg-primary) 0%, var(--gray-100) 100%);
+        min-height: 100vh;
+        display: flex;
+        font-feature-settings: "cv03", "cv04", "cv11";
+      }
+  
+      /* Sidebar Enhanced */
+      .sidebar {
+        width: var(--sidebar-width);
+        height: 100vh;
+        background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        position: fixed;
+        left: 0;
+        top: 0;
+        color: white;
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+      }
+  
+      .sidebar::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.02"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.02"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+      }
+  
+     
+      .sidebar-header {
+        padding: 2rem 1.5rem;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        background: rgba(255, 255, 255, 0.05);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+      }
+  
+      .sidebar-header h2 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        margin-bottom: 0.5rem;
+      }
+  
+      .sidebar-header p {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        font-weight: 300;
+      }
+  
+      .sidebar-menu {
+        list-style: none;
+        padding: 1rem 0;
+        position: relative;
+        z-index: 1;
+      }
+  
+      .sidebar-menu li {
+        margin-bottom: 0.25rem;
+      }
+  
+      .sidebar-menu a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        border-radius: 0;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        font-weight: 500;
+      }
+  
+      .sidebar-menu a::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--accent-light);
+        transform: scaleY(0);
+        transition: var(--transition);
+      }
+  
+      .sidebar-menu a:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        transform: translateX(8px);
+      }
+  
+      .sidebar-menu a:hover::before {
+        transform: scaleY(1);
+      }
+  
+      .sidebar-menu a.active {
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+        color: white;
+        transform: translateX(8px);
+      }
+  
+      .sidebar-menu a.active::before {
+        transform: scaleY(1);
+      }
+  
+      .sidebar-menu i {
+        margin-right: 1rem;
+        width: 20px;
+        text-align: center;
+        font-size: 1.1rem;
+      }
+  
+      /* Main Content Enhanced */
+      .main-content {
+        margin-left: var(--sidebar-width);
+        flex: 1;
+        padding: 2rem;
+        max-width: calc(100% - var(--sidebar-width));
+        background: transparent;
+      }
+  
+      .module {
+        display: none;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius-lg);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        position: relative;
+        overflow: hidden;
+      }
+  
+      .module::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+      }
+  
+      .module.active {
+        display: block;
+        animation: fadeInUp 0.5s ease-out;
+      }
+  
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-      };
-      xhr.send(data);
-    }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+  
+      /* Typography Enhanced */
+      h1 {
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+        font-size: 2.25rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+  
+      h1 i {
+        background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+  
+      h2 {
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+      }
+  
+      /* Form Elements Enhanced */
+      input, select, button {
+        padding: 0.875rem 1.25rem;
+        border: 2px solid var(--gray-300);
+        border-radius: var(--border-radius);
+        margin: 0.5rem;
+        font-size: 1rem;
+        transition: var(--transition);
+        font-family: inherit;
+        background: var(--bg-secondary);
+      }
+  
+      input:focus, select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        transform: translateY(-2px);
+      }
+  
+      input::placeholder {
+        color: var(--gray-500);
+      }
+  
+      button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+        position: relative;
+        overflow: hidden;
+      }
+  
+      button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.6s;
+      }
+  
+      button:hover::before {
+        left: 100%;
+      }
+  
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+  
+      button:active {
+        transform: translateY(0);
+      }
+  
+      .form-fonds {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius-lg);
+        border: 1px solid var(--gray-200);
+      }
+  
+      /* Tables Enhanced */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2rem;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+      }
+  
+      th, td {
+        padding: 1.25rem;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-200);
+      }
+  
+      th {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+  
+      tr:nth-child(even) {
+        background-color: var(--gray-50);
+      }
+  
+      tr:hover {
+        background: linear-gradient(90deg, var(--gray-100) 0%, var(--gray-50) 100%);
+        transform: scale(1.01);
+        transition: var(--transition);
+      }
+  
+      /* Dashboard Stats Enhanced */
+      .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+  
+      .stat-card {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+      }
+  
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+      }
+  
+      .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-xl);
+      }
+  
+      .stat-card h3 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+        font-weight: 500;
+      }
+  
+      .stat-card p {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+      }
+  
+      /* Canvas Enhanced */
+      canvas {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius-lg);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+      }
+  
+      /* Special Buttons */
+      #btn-pdf {
+        background: linear-gradient(135deg, var(--danger-color) 0%, #c53030 100%);
+        margin-top: 1rem;
+      }
+  
+      #btn-pdf:hover {
+        background: linear-gradient(135deg, #c53030 0%, #9c2222 100%);
+      }
+  
+      /* Labels Enhanced */
+      label {
+        display: inline-block;
+        margin-right: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+      }
+  
+      /* Stat Boxes */
+      .stat-box {
+        background: var(--bg-secondary);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+      }
+  
+      .stat-box th {
+        background: transparent;
+        color: var(--gray-700);
+        font-weight: 600;
+      }
+  
+      .stat-box td {
+        font-size: 1.3rem;
+        color: var(--primary-color);
+        font-weight: 700;
+      }
+  
+      /* Responsive Design Enhanced */
+      @media (max-width: 1024px) {
+        .sidebar {
+          width: 80px;
+          --sidebar-width: 80px;
+        }
+  
+        .sidebar-header h2,
+        .sidebar-header p {
+          display: none;
+        }
+  
+        .sidebar-menu a span {
+          display: none;
+        }
+  
+        .sidebar-menu a {
+          justify-content: center;
+          padding: 1rem;
+        }
+  
+        .sidebar-menu i {
+          margin-right: 0;
+          font-size: 1.3rem;
+        }
+  
+        .main-content {
+          margin-left: 80px;
+          max-width: calc(100% - 80px);
+        }
+      }
+  
+      @media (max-width: 768px) {
+        .main-content {
+          padding: 1rem;
+        }
+  
+        .module {
+          padding: 1.5rem;
+        }
+  
+        h1 {
+          font-size: 1.8rem;
+        }
+  
+        .dashboard-stats {
+          grid-template-columns: 1fr;
+        }
+  
+        .form-fonds {
+          grid-template-columns: 1fr;
+          padding: 1.5rem;
+        }
+      }
+  
+      /* Loading Animation */
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+      }
+  
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+  
+      /* Success/Error Messages */
+      .message {
+        padding: 1rem 1.5rem;
+        border-radius: var(--border-radius);
+        margin: 1rem 0;
+        font-weight: 500;
+      }
+  
+      .message.success {
+        background: #f0fff4;
+        color: var(--success-color);
+        border: 1px solid #9ae6b4;
+      }
+  
+      .message.error {
+        background: #fed7d7;
+        color: var(--danger-color);
+        border: 1px solid #feb2b2;
+      }
+  
+      /* Tooltips */
+      .tooltip {
+        position: relative;
+        cursor: help;
+      }
+  
+      .tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--gray-800);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: var(--transition);
+        font-size: 0.8rem;
+        z-index: 1000;
+      }
+  
+      .tooltip:hover::after {
+        opacity: 1;
+        visibility: visible;
+      }
+  
+      /* Scrollbar Styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+  
+      ::-webkit-scrollbar-track {
+        background: var(--gray-100);
+      }
+  
+      ::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: 4px;
+      }
+  
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>BankPro</h2>
+        <p>Gestion Professionnelle</p>
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="#dashboard" class="active" onclick="showModule('dashboard')">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a></li>
+        <li><a href="#fonds" onclick="showModule('fonds')">
+          <i class="fas fa-wallet"></i>
+          <span>Fonds</span>
+        </a></li>
+        <li><a href="#types-pret" onclick="showModule('types-pret')">
+          <i class="fas fa-list-alt"></i>
+          <span>Types de prêt</span>
+        </a></li>
+        <li><a href="#clients" onclick="showModule('clients')">
+          <i class="fas fa-users"></i>
+          <span>Clients</span>
+        </a></li>
+        <li><a href="#prets" onclick="showModule('prets')">
+          <i class="fas fa-hand-holding-usd"></i>
+          <span>Prêts</span>
+        </a></li>
+        <li><a href="#simulation" onclick="showModule('simulation')">
+          <i class="fas fa-calculator"></i>
+          <span>Simulation</span>
+        </a></li>
+        <li><a href="#operations" onclick="showModule('operations')">
+          <i class="fas fa-list-check"></i>
+          <span>Opérations</span>
+        </a></li>
+        <li><a href="#interets" onclick="showModule('interets')">
+          <i class="fas fa-percentage"></i>
+          <span>Intérêts</span>
+        </a></li>
+      </ul>
+    </div>
+  
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard Module -->
+      <div id="dashboard" class="module active">
+        <h1><i class="fas fa-chart-line"></i> Dashboard Financier</h1>
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <h3>Solde Actuel</h3>
+            <p id="dash-solde">0 Ar</p>
+          </div>
+          <div class="stat-card">
+            <h3>Prêts en Cours</h3>
+            <p id="dash-prets-count">0</p>
+          </div>
+          <div class="stat-card">
+            <h3>Clients Actifs</h3>
+            <p id="dash-clients-count">0</p>
+          </div>
+        </div>
+        <canvas id="dash-chart" height="200"></canvas>
+      </div>
+  
+      <!-- Fonds Module -->
+      <div id="fonds" class="module">
+        <h1><i class="fas fa-wallet"></i> Gestion des Fonds</h1>
+        <div class="form-fonds">
+          <input type="number" id="fonds-montant" placeholder="Montant (Ar)">
+          <select id="fonds-type">
+            <option value="entrant">💰 Entrée de fonds</option>
+            <option value="sortant">💸 Sortie de fonds</option>
+          </select>
+          <select id="fonds-motif">
+            <option value="">Sélectionner un motif</option>
+          </select>
+          <button onclick="ajouterFonds()">
+            <i class="fas fa-plus"></i> Ajouter
+          </button>
+        </div>
+        
+        <div class="stat-box">
+          <table>
+            <tr><th>💰 Solde actuel</th><td id="fonds-solde">0 Ar</td></tr>
+            <tr><th>📈 Total entrées</th><td id="fonds-entrees">0 Ar</td></tr>
+            <tr><th>📉 Total sorties</th><td id="fonds-sorties">0 Ar</td></tr>
+            <tr><th>🏦 Total prêts accordés</th><td id="fonds-prets">0 Ar</td></tr>
+          </table>
+        </div>
+        
+        <button onclick="afficherFonds()">
+          <i class="fas fa-sync-alt"></i> Actualiser
+        </button>
+      </div>
+  
+      <!-- Types de prêt Module -->
+      <div id="types-pret" class="module">
+        <h1><i class="fas fa-list-alt"></i> Types de Prêt</h1>
+        <div class="form-fonds">
+          <input type="text" id="pret-nom" placeholder="Nom du type de prêt">
+          <input type="number" id="pret-taux" placeholder="Taux d'intérêt (%)">
+          <input type="number" id="pret-montant-min" placeholder="Montant minimum">
+          <input type="number" id="pret-montant-max" placeholder="Montant maximum">
+          <input type="number" id="pret-duree-min" placeholder="Durée min (mois)">
+          <input type="number" id="pret-duree-max" placeholder="Durée max (mois)">
+          <button onclick="ajouterTypePret()">
+            <i class="fas fa-plus"></i> Ajouter Type
+          </button>
+        </div>
+  
+        <table id="table-typepret">
+          <thead><tr><th>ID</th><th>Nom</th><th>Taux (%)</th><th>Montant min</th><th>Montant max</th><th>Durée min</th><th>Durée max</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+  
+      <!-- Clients Module -->
+      <div id="clients" class="module">
+        <h1><i class="fas fa-users"></i> Gestion des Clients</h1>
+        <div class="form-fonds">
+          <input type="text" id="client-nom" placeholder="Nom du client">
+          <input type="text" id="client-prenom" placeholder="Prénom du client">
+          <input type="text" id="client-cin" placeholder="Numéro CIN">
+          <input type="date" id="client-date-naissance">
+          <button onclick="ajouterClient()">
+            <i class="fas fa-user-plus"></i> Ajouter Client
+          </button>
+        </div>
+  
+        <table id="table-client">
+          <thead><tr><th>ID</th><th>Nom</th><th>Prénom</th><th>CIN</th><th>Date de naissance</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+  
+      <!-- Prêts Module -->
+      <div id="prets" class="module">
+        <h1><i class="fas fa-hand-holding-usd"></i> Gestion des Prêts</h1>
+        <div class="form-fonds">
+          <div>
+            <label for="pret-client">👤 Client</label>
+            <select id="pret-client"></select>
+          </div>
+          <div>
+            <label for="pret-type">📋 Type de prêt</label>
+            <select id="pret-type"></select>
+          </div>
+          <input type="number" id="pret-montant" placeholder="Montant du prêt">
+          <input type="number" id="pret-duree" placeholder="Durée (mois)">
+          <input type="number" id="pret-delai" placeholder="Délai 1er remboursement (mois)">
+          <button onclick="ajouterPret()">
+            <i class="fas fa-handshake"></i> Accorder le Prêt
+          </button>
+        </div>
+  
+        <table id="table-pret">
+          <thead><tr><th>ID</th><th>Client</th><th>Type</th><th>Montant</th><th>Durée</th><th>Date</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <script>
+          // Ajout d'un bouton "Voir opérations" dans chaque ligne du tableau des prêts
+          function chargerPrets() {
+            ajax("GET", "/pret", null, (data) => {
+              const tbody = document.querySelector("#table-pret tbody");
+              tbody.innerHTML = "";
+              data.forEach(p => {
+                tbody.innerHTML += `<tr>
+                  <td>${p.id}</td>
+                  <td>${p.client_nom ?? p.client_id}</td>
+                  <td>${p.type_nom ?? p.type_pret_id}</td>
+                  <td>${p.montant}</td>
+                  <td>${p.duree} mois</td>
+                  <td>${p.date_pret}</td>
+                  <td><button onclick="voirOperations(${p.id})">Voir opérations</button></td>
+                </tr>`;
+              });
+            });
+          }
+          function voirOperations(pretId) {
+            showModule('operations');
+            document.getElementById('operations-pret-id').value = pretId;
+            chargerOperations(pretId);
+          }
+        </script>
+      </div>
 
-    function chargerEtudiants() {
-      ajax("GET", "/etudiants", null, (data) => {
-        const tbody = document.querySelector("#table-etudiants tbody");
-        tbody.innerHTML = "";
-        data.forEach(e => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${e.id}</td>
-            <td>${e.nom}</td>
-            <td>${e.prenom}</td>
-            <td>${e.email}</td>
-            <td>${e.age}</td>
-            <td>
-              <button onclick='remplirFormulaire(${JSON.stringify(e)})'>✏️</button>
-              <button onclick='supprimerEtudiant(${e.id})'>🗑️</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+      <!-- Opérations Module -->
+      <div id="operations" class="module">
+        <h1><i class="fas fa-list-check"></i> Opérations de prêt</h1>
+        <label for="operations-pret-id">ID Prêt :</label>
+        <input type="number" id="operations-pret-id" placeholder="Ex : 1">
+        <button onclick="chargerOperations(document.getElementById('operations-pret-id').value)">Afficher les opérations</button>
+        <div id="operations-titre" style="margin:10px 0;color:#1976D2;font-weight:bold;"></div>
+        <table id="table-operation">
+          <thead><tr><th>Mois</th><th>Année</th><th>Emprunt restant</th><th>Intérêt</th><th>Amortissement</th><th>Échéance</th><th>Valeur nette</th><th>Statut</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="showModule('prets')" style="margin-top:15px;">Retour à la liste des prêts</button>
+        <script>
+          // Affichage dynamique du titre du prêt sélectionné
+          function chargerOperations(pret_id) {
+            if (!pret_id) {
+              alert("Veuillez entrer un ID de prêt valide.");
+              return;
+            }
+            document.getElementById('operations-titre').textContent = 'Opérations pour le prêt n°' + pret_id;
+            ajax("GET", `/operation?pret_id=${pret_id}`, null, (data) => {
+              const tbody = document.querySelector("#table-operation tbody");
+              tbody.innerHTML = "";
+              let now = new Date();
+              if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#888;">Aucune opération trouvée pour ce prêt.</td></tr>';
+                return;
+              }
+              data.forEach(o => {
+                let mois = parseInt(o.mois || 1);
+                let annee = parseInt(o.annee || new Date().getFullYear());
+                let dateEcheance = new Date(annee, mois - 1, 1);
+                let statutPaiement = '';
+                if (o.statut && o.statut.toLowerCase() === 'remboursé') {
+                  statutPaiement = '<span style="color:green">Payé</span>';
+                } else if (dateEcheance < now) {
+                  statutPaiement = '<span style="color:red">Retard</span>';
+                } else {
+                  statutPaiement = '<span style="color:orange">À venir</span>';
+                }
+                tbody.innerHTML += `<tr>
+                  <td>${o.mois || ''}</td>
+                  <td>${o.annee || ''}</td>
+                  <td>${o.emprunt_restant}</td>
+                  <td>${o.interet_mensuel}</td>
+                  <td>${o.montant_rembourse}</td>
+                  <td>${o.echeance}</td>
+                  <td>${o.valeur_note}</td>
+                  <td>${statutPaiement}</td>
+                </tr>`;
+              });
+            });
+          }
+        </script>
+      </div>
+  
+      <!-- Simulation Module -->
+      <div id="simulation" class="module">
+        <h1><i class="fas fa-calculator"></i> Simulation de Prêt</h1>
+        <div class="form-fonds">
+          <input type="number" id="sim-montant" placeholder="Montant à emprunter">
+          <input type="number" id="sim-taux" placeholder="Taux annuel (%)">
+          <input type="number" id="sim-duree" placeholder="Durée (mois)">
+          <div>
+            <label for="sim-mode">Mode de remboursement</label>
+            <select id="sim-mode">
+              <option value="constant">📊 Annuité constante</option>
+              <option value="degressif">📉 Amortissement constant</option>
+            </select>
+          </div>
+          <input type="number" id="sim-delai" placeholder="Délai 1er remboursement (mois)">
+          <button onclick="simulerPret()">
+            <i class="fas fa-chart-bar"></i> Simuler
+          </button>
+        </div>
+        
+        <div id="sim-result"></div>
+        <canvas id="graph-amortissement"></canvas>
+        <button id="btn-pdf" style="display:none" onclick="genererPDF()">
+          <i class="fas fa-file-pdf"></i> Générer PDF
+        </button>
+      </div>
+  
+      <!-- Intérêts Module -->
+      <div id="interets" class="module">
+        <h1><i class="fas fa-percentage"></i> Analyse des Intérêts</h1>
+        <div class="form-fonds">
+          <div>
+            <label>📅 Période début</label>
+            <input type="month" id="filtre-debut">
+          </div>
+          <div>
+            <label>📅 Période fin</label>
+            <input type="month" id="filtre-fin">
+          </div>
+          <button onclick="afficherInterets()">
+            <i class="fas fa-search"></i> Analyser
+          </button>
+        </div>
+        
+        <table id="table-interets">
+          <thead><tr><th>Période</th><th>Intérêts Générés</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <canvas id="chart-interets" height="100"></canvas>
+      </div>
+    </div>
+  
+    <!-- Notification Toast -->
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+  
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/app.js"></script>
+    <script src="assets/dashboard.js"></script>
+    <script src="assets/fonds.js"></script>
+    <script src="assets/typepret.js"></script>
+    <script src="assets/client.js"></script>
+    <script src="assets/pret.js"></script>
+    <script src="assets/simulation.js"></script>
+    <script src="assets/interets.js"></script>
+    <script src="assets/operation.js"></script>
+    <script>
+      // Fonction pour gérer l'affichage des modules
+      function showModule(moduleId) {
+        // Cacher tous les modules
+        document.querySelectorAll('.module').forEach(module => {
+          module.classList.remove('active');
+        });
+        // Afficher le module sélectionné
+        document.getElementById(moduleId).classList.add('active');
+        // Mettre à jour le menu
+        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+          link.classList.remove('active');
+        });
+        document.querySelector(`a[href="#${moduleId}"]`).classList.add('active');
+      }
+
+      // Initialisation au chargement de la page
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof chargerTypesPret === 'function') chargerTypesPret();
+        if (typeof chargerClients === 'function') chargerClients();
+        if (typeof chargerPrets === 'function') chargerPrets();
+        if (typeof afficherFonds === 'function') afficherFonds();
+        if (typeof afficherInterets === 'function') afficherInterets();
+
+        document.querySelector('#table-pret').addEventListener('click', function(e) {
+          const tr = e.target.closest('tr');
+          if (!tr) return;
+          const id = tr.querySelector('td')?.textContent;
+          if (id) chargerOperations(id);
         });
       });
-    }
+    </script>
 
-    function ajouterOuModifier() {
-      const id = document.getElementById("id").value;
-      const nom = document.getElementById("nom").value;
-      const prenom = document.getElementById("prenom").value;
-      const email = document.getElementById("email").value;
-      const age = document.getElementById("age").value;
-
-      const data = `nom=${encodeURIComponent(nom)}&prenom=${encodeURIComponent(prenom)}&email=${encodeURIComponent(email)}&age=${age}`;
-
-      if (id) {
-        ajax("PUT", `/etudiants/${id}`, data, () => {
-          resetForm();
-          chargerEtudiants();
-        });
-      } else {
-        ajax("POST", "/etudiants", data, () => {
-          resetForm();
-          chargerEtudiants();
-        });
+  
+    <!-- Styles pour les notifications -->
+    <style>
+      .notification {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-lg);
+        border-left: 4px solid var(--success-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        animation: slideIn 0.3s ease-out;
+        max-width: 400px;
       }
-    }
-
-    function remplirFormulaire(e) {
-      document.getElementById("id").value = e.id;
-      document.getElementById("nom").value = e.nom;
-      document.getElementById("prenom").value = e.prenom;
-      document.getElementById("email").value = e.email;
-      document.getElementById("age").value = e.age;
-    }
-
-    function supprimerEtudiant(id) {
-      if (confirm("Supprimer cet étudiant ?")) {
-        ajax("DELETE", `/etudiants/${id}`, null, () => {
-          chargerEtudiants();
-        });
+  
+      .notification.error {
+        border-left-color: var(--danger-color);
       }
-    }
-
-    function resetForm() {
-      document.getElementById("id").value = "";
-      document.getElementById("nom").value = "";
-      document.getElementById("prenom").value = "";
-      document.getElementById("email").value = "";
-      document.getElementById("age").value = "";
-    }
-
-    chargerEtudiants();
-  </script>
-
-</body>
-</html>
+  
+      .notification i {
+        color: var(--success-color);
+        font-size: 1.2rem;
+      }
+  
+      .notification.error i {
+        color: var(--danger-color);
+      }
+  
+      .notification span {
+        flex: 1;
+        font-weight: 500;
+      }
+  
+      .notification button {
+        background: none;
+        border: none;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 50%;
+        transition: var(--transition);
+      }
+  
+      .notification button:hover {
+        background: var(--gray-100);
+        color: var(--gray-700);
+      }
+  
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+  
+      /* Amélioration de l'accessibilité */
+      .sidebar-menu a:focus,
+      input:focus,
+      select:focus,
+      button:focus {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 2px;
+      }
+  
+      /* Animation de chargement pour les boutons */
+      button.loading {
+        pointer-events: none;
+        opacity: 0.7;
+      }
+  
+      button.loading::after {
+        content: '';
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+        margin-left: 8px;
+      }
+  
+      /* Indicateur de statut pour les formulaires */
+      .form-group {
+        position: relative;
+      }
+  
+      .form-group.success input {
+        border-color: var(--success-color);
+      }
+  
+      .form-group.error input {
+        border-color: var(--danger-color);
+      }
+  
+      /* Amélioration des tableaux */
+      table tr:last-child td {
+        border-bottom: none;
+      }
+  
+      table thead tr {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+      }
+  
+      /* Effet de survol pour les cartes statistiques */
+      .stat-card:hover::before {
+        animation: pulse 2s infinite;
+      }
+  
+      @keyframes pulse {
+        0% { opacity: 0.1; }
+        50% { opacity: 0.2; }
+        100% { opacity: 0.1; }
+      }
+  
+      /* Responsive pour les très petits écrans */
+      @media (max-width: 480px) {
+        .dashboard-stats {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        
+        .stat-card {
+          padding: 1.5rem;
+        }
+        
+        .stat-card h3 {
+          font-size: 0.8rem;
+        }
+        
+        .stat-card p {
+          font-size: 1.5rem;
+        }
+        
+        h1 {
+          font-size: 1.5rem;
+        }
+        
+        .module {
+          padding: 1rem;
+        }
+      }
+    </style>
+  </body>
+  </html> 
